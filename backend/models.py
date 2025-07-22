@@ -393,6 +393,305 @@ class File(models.Model):
 
 
 
+class AccomplishmentReport(models.Model):
+    REPORT_TYPE_CHOICES = [
+        ('MONTHLY', 'Monthly Report'),
+        ('QUARTERLY', 'Quarterly Report'),
+        ('ANNUAL', 'Annual Report'),
+        ('FINAL', 'Final Report'),
+    ]
+
+    STATUS_CHOICES = [
+        ('DRAFT', 'Draft'),
+        ('SUBMITTED', 'Submitted'),
+        ('APPROVED', 'Approved'),
+        ('REVISION_NEEDED', 'Revision Needed'),
+    ]
+
+    report_id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='accomplishment_reports'
+    )
+    report_type = models.CharField(max_length=15, choices=REPORT_TYPE_CHOICES)
+    reporting_period = models.CharField(max_length=50)
+    achievements = models.TextField()
+    challenges = models.TextField(blank=True, null=True)
+    recommendations = models.TextField(blank=True, null=True)
+    submitted_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.PROTECT,
+        related_name='submitted_reports'
+    )
+    submission_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='DRAFT')
+    reviewed_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='reviewed_reports'
+    )
+    review_date = models.DateTimeField(blank=True, null=True)
+    review_comments = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'accomplishment_reports'
+        ordering = ['-submission_date']
+        unique_together = ['project', 'report_type', 'reporting_period']
+
+    def __str__(self):
+        return f"{self.project.title} - {self.get_report_type_display()} ({self.reporting_period})"
+
+
+class AttendanceTemplate(models.Model):
+    template_id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='attendance_templates'
+    )
+    template_name = models.CharField(max_length=200)
+    session_date = models.DateField()
+    session_time = models.TimeField()
+    venue = models.CharField(max_length=200)
+    expected_participants = models.PositiveIntegerField(default=0)
+    created_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.PROTECT,
+        related_name='created_templates'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        db_table = 'attendance_templates'
+        ordering = ['session_date', 'session_time']
+
+    def __str__(self):
+        return f"{self.template_name} - {self.session_date}"
+
+
+class AttendanceRecord(models.Model):
+    STATUS_CHOICES = [
+        ('PRESENT', 'Present'),
+        ('ABSENT', 'Absent'),
+        ('LATE', 'Late'),
+        ('EXCUSED', 'Excused'),
+    ]
+
+    attendance_id = models.AutoField(primary_key=True)
+    template = models.ForeignKey(
+        AttendanceTemplate,
+        on_delete=models.CASCADE,
+        related_name='attendance_records'
+    )
+    participant_name = models.CharField(max_length=200)
+    participant_email = models.EmailField(validators=[EmailValidator()])
+    organization = models.CharField(max_length=200, blank=True, null=True)
+    contact_number = models.CharField(max_length=15, blank=True, null=True)
+    check_in_time = models.DateTimeField(blank=True, null=True)
+    check_out_time = models.DateTimeField(blank=True, null=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='ABSENT')
+    notes = models.TextField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'attendance_records'
+        unique_together = ['template', 'participant_email']
+        ordering = ['participant_name']
+
+    def __str__(self):
+        return f"{self.participant_name} - {self.template.template_name}"
+
+
+class Evaluation(models.Model):
+    EVALUATION_TYPE_CHOICES = [
+        ('PROJECT', 'Project Evaluation'),
+        ('TRAINER', 'Trainer Evaluation'),
+        ('OVERALL', 'Overall Program Evaluation'),
+    ]
+
+    evaluation_id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='evaluations'
+    )
+    evaluator = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='given_evaluations',
+        blank=True,
+        null=True
+    )
+    trainer = models.ForeignKey(
+        Trainer,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        related_name='evaluations'
+    )
+    evaluation_type = models.CharField(max_length=15, choices=EVALUATION_TYPE_CHOICES)
+    rating = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)])
+    feedback = models.TextField()
+    evaluation_date = models.DateTimeField(auto_now_add=True)
+    is_anonymous = models.BooleanField(default=False)
+    evaluator_name = models.CharField(max_length=200, blank=True, null=True, help_text="For anonymous evaluations")
+    evaluator_email = models.EmailField(blank=True, null=True, help_text="For anonymous evaluations")
+
+    class Meta:
+        db_table = 'evaluations'
+        ordering = ['-evaluation_date']
+
+    def __str__(self):
+        evaluator_name = self.evaluator.full_name if self.evaluator else self.evaluator_name or "Anonymous"
+        return f"{evaluator_name} - {self.project.title} ({self.rating}/5)"
+
+
+class EvaluationLink(models.Model):
+    LINK_TYPE_CHOICES = [
+        ('ATTENDANCE', 'Attendance Link'),
+        ('EVALUATION', 'Evaluation Link'),
+        ('FEEDBACK', 'Feedback Link'),
+    ]
+
+    link_id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='evaluation_links'
+    )
+    link_type = models.CharField(max_length=15, choices=LINK_TYPE_CHOICES)
+    unique_token = models.UUIDField(default=uuid.uuid4, unique=True)
+    expiration_date = models.DateTimeField()
+    created_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.PROTECT,
+        related_name='created_links'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_active = models.BooleanField(default=True)
+    usage_count = models.PositiveIntegerField(default=0)
+    max_usage = models.PositiveIntegerField(blank=True, null=True, help_text="Leave blank for unlimited usage")
+
+    class Meta:
+        db_table = 'evaluation_links'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.get_link_type_display()} - {self.project.title}"
+
+    @property
+    def is_expired(self):
+        return timezone.now() > self.expiration_date
+
+    @property
+    def is_usage_exceeded(self):
+        if self.max_usage is None:
+            return False
+        return self.usage_count >= self.max_usage
+
+
+class ProjectPerformance(models.Model):
+    performance_id = models.AutoField(primary_key=True)
+    project = models.OneToOneField(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='performance'
+    )
+    total_beneficiaries = models.PositiveIntegerField(default=0)
+    completion_percentage = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=0
+    )
+    budget_utilization = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        default=0
+    )
+    impact_score = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        default=0
+    )
+    sustainability_rating = models.DecimalField(
+        max_digits=3,
+        decimal_places=2,
+        validators=[MinValueValidator(0), MaxValueValidator(5)],
+        default=0
+    )
+    last_updated = models.DateTimeField(auto_now=True)
+    updated_by = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='updated_performances'
+    )
+
+    class Meta:
+        db_table = 'project_performance'
+        ordering = ['-last_updated']
+
+    def __str__(self):
+        return f"{self.project.title} - Performance Metrics"
+
+
+class Communication(models.Model):
+    EMAIL_TYPE_CHOICES = [
+        ('NOTIFICATION', 'Notification'),
+        ('REMINDER', 'Reminder'),
+        ('APPROVAL', 'Approval Notification'),
+        ('REJECTION', 'Rejection Notification'),
+        ('DEADLINE', 'Deadline Alert'),
+        ('WELCOME', 'Welcome Email'),
+        ('COMPLETION', 'Completion Notice'),
+    ]
+
+    STATUS_CHOICES = [
+        ('PENDING', 'Pending'),
+        ('SENT', 'Sent'),
+        ('FAILED', 'Failed'),
+        ('DELIVERED', 'Delivered'),
+    ]
+
+    communication_id = models.AutoField(primary_key=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name='communications',
+        blank=True,
+        null=True
+    )
+    sender = models.ForeignKey(
+        CustomUser,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='sent_communications'
+    )
+    recipient_email = models.EmailField(validators=[EmailValidator()])
+    recipient_name = models.CharField(max_length=200, blank=True, null=True)
+    email_type = models.CharField(max_length=15, choices=EMAIL_TYPE_CHOICES)
+    subject = models.CharField(max_length=300)
+    message = models.TextField()
+    sent_date = models.DateTimeField(auto_now_add=True)
+    is_automated = models.BooleanField(default=True)
+    status = models.CharField(max_length=15, choices=STATUS_CHOICES, default='PENDING')
+    error_message = models.TextField(blank=True, null=True)
+    read_at = models.DateTimeField(blank=True, null=True)
+
+    class Meta:
+        db_table = 'communications'
+        ordering = ['-sent_date']
+
+    def __str__(self):
+        return f"{self.subject} -> {self.recipient_email} ({self.get_status_display()})"
+
 
 
 
