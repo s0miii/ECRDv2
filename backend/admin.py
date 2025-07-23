@@ -186,5 +186,216 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 
+@admin.register(ProjectMember)
+class ProjectMemberAdmin(admin.ModelAdmin):
+    list_display = ['user', 'project', 'role', 'assigned_date', 'is_active']
+    list_filter = ['role', 'is_active', 'assigned_date']
+    search_fields = ['user__first_name', 'user__last_name', 'project__title']
+    ordering = ['-assigned_date']
+
+    autocomplete_fields = ['project', 'user']
+
+
+
+@admin.register(Trainer)
+class TrainerAdmin(admin.ModelAdmin):
+    list_display = [
+        'trainer_name', 'email', 'is_internal', 
+        'assignment_count', 'created_at'
+    ]
+    list_filter = ['is_internal', 'created_at']
+    search_fields = ['trainer_name', 'email', 'expertise']
+    ordering = ['trainer_name']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            assignment_count=Count('project_assignments')
+        )
+    
+    def assignment_count(self, obj):
+        return obj.assignment_count
+    assignment_count.short_description = 'Assignments'
+    assignment_count.admin_order_field = 'assignment_count'
+
+
+
+@admin.register(ProjectTrainer)
+class ProjectTrainerAdmin(admin.ModelAdmin):
+    list_display = [
+        'trainer', 'project', 'training_topic', 'training_date', 
+        'duration_hours', 'status', 'honorarium'
+    ]
+    list_filter = ['status', 'training_date']
+    search_fields = ['trainer__trainer_name', 'project__title', 'training_topic']
+    ordering = ['-training_date']
+    date_hierarchy = 'training_date'
+    
+    autocomplete_fields = ['project', 'trainer']
+
+
+@admin.register(DocumentaryRequirement)
+class DocumentaryRequirementAdmin(admin.ModelAdmin):
+    list_display = [
+        'requirement_name', 'project', 'assigned_to', 
+        'due_date', 'status', 'is_overdue_display'
+    ]
+    list_filter = ['status', 'due_date', 'created_at']
+    search_fields = ['requirement_name', 'project__title', 'assigned_to__first_name']
+    ordering = ['due_date']
+    date_hierarchy = 'due_date'
+    
+    autocomplete_fields = ['project', 'assigned_by', 'assigned_to', 'approved_by']
+    
+    def is_overdue_display(self, obj):
+        if obj.is_overdue:
+            return format_html('<span style="color: red;">Yes</span>')
+        return 'No'
+    is_overdue_display.short_description = 'Overdue'
+    is_overdue_display.admin_order_field = 'due_date'
+
+
+@admin.register(File)
+class FileAdmin(admin.ModelAdmin):
+    list_display = [
+        'file_name', 'project', 'file_type', 'file_size_display',
+        'uploaded_by', 'approval_status', 'uploaded_date'
+    ]
+    list_filter = ['file_type', 'approval_status', 'uploaded_date']
+    search_fields = ['file_name', 'project__title', 'uploaded_by__first_name']
+    ordering = ['-uploaded_date']
+    date_hierarchy = 'uploaded_date'
+    
+    autocomplete_fields = ['project', 'requirement', 'uploaded_by', 'approved_by']
+    
+    def file_size_display(self, obj):
+        return f"{obj.file_size_mb} MB"
+    file_size_display.short_description = 'File Size'
+
+
+@admin.register(AccomplishmentReport)
+class AccomplishmentReportAdmin(admin.ModelAdmin):
+    list_display = [
+        'project', 'report_type', 'reporting_period', 
+        'status', 'submitted_by', 'submission_date'
+    ]
+    list_filter = ['report_type', 'status', 'submission_date']
+    search_fields = ['project__title', 'reporting_period', 'achievements']
+    ordering = ['-submission_date']
+    date_hierarchy = 'submission_date'
+    
+    autocomplete_fields = ['project', 'submitted_by', 'reviewed_by']
+
+
+@admin.register(AttendanceTemplate)
+class AttendanceTemplateAdmin(admin.ModelAdmin):
+    list_display = [
+        'template_name', 'project', 'session_date', 
+        'session_time', 'expected_participants', 'attendance_count'
+    ]
+    list_filter = ['session_date', 'is_active']
+    search_fields = ['template_name', 'project__title', 'venue']
+    ordering = ['-session_date']
+    date_hierarchy = 'session_date'
+    
+    autocomplete_fields = ['project', 'created_by']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).annotate(
+            attendance_count=Count('attendance_records')
+        )
+    
+    def attendance_count(self, obj):
+        return obj.attendance_count
+    attendance_count.short_description = 'Attendees'
+
+
+@admin.register(AttendanceRecord)
+class AttendanceRecordAdmin(admin.ModelAdmin):
+    list_display = [
+        'participant_name', 'participant_email', 'template', 
+        'status', 'check_in_time', 'check_out_time'
+    ]
+    list_filter = ['status', 'template__session_date']
+    search_fields = ['participant_name', 'participant_email', 'organization']
+    ordering = ['template__session_date', 'participant_name']
+    
+    autocomplete_fields = ['template']
+
+
+@admin.register(Evaluation)
+class EvaluationAdmin(admin.ModelAdmin):
+    list_display = [
+        'project', 'evaluator_display', 'evaluation_type', 
+        'rating', 'evaluation_date', 'is_anonymous'
+    ]
+    list_filter = ['evaluation_type', 'rating', 'is_anonymous', 'evaluation_date']
+    search_fields = ['project__title', 'feedback', 'evaluator_name']
+    ordering = ['-evaluation_date']
+    date_hierarchy = 'evaluation_date'
+    
+    autocomplete_fields = ['project', 'evaluator', 'trainer']
+    
+    def evaluator_display(self, obj):
+        if obj.is_anonymous:
+            return obj.evaluator_name or "Anonymous"
+        return obj.evaluator.full_name if obj.evaluator else "N/A"
+    evaluator_display.short_description = 'Evaluator'
+
+
+@admin.register(EvaluationLink)
+class EvaluationLinkAdmin(admin.ModelAdmin):
+    list_display = [
+        'project', 'link_type', 'unique_token', 'is_active', 
+        'usage_count', 'expiration_date', 'is_expired_display'
+    ]
+    list_filter = ['link_type', 'is_active', 'expiration_date']
+    search_fields = ['project__title', 'unique_token']
+    ordering = ['-created_at']
+    
+    autocomplete_fields = ['project', 'created_by']
+    readonly_fields = ['unique_token', 'usage_count']
+    
+    def is_expired_display(self, obj):
+        if obj.is_expired:
+            return format_html('<span style="color: red;">Yes</span>')
+        return 'No'
+    is_expired_display.short_description = 'Expired'
+
+
+@admin.register(ProjectPerformance)
+class ProjectPerformanceAdmin(admin.ModelAdmin):
+    list_display = [
+        'project', 'total_beneficiaries', 'completion_percentage', 
+        'budget_utilization', 'impact_score', 'sustainability_rating'
+    ]
+    search_fields = ['project__title']
+    ordering = ['-last_updated']
+    
+    autocomplete_fields = ['project', 'updated_by']
+    readonly_fields = ['last_updated']
+
+
+@admin.register(Communication)
+class CommunicationAdmin(admin.ModelAdmin):
+    list_display = [
+        'subject', 'recipient_email', 'email_type', 
+        'status', 'sent_date', 'is_automated'
+    ]
+    list_filter = ['email_type', 'status', 'is_automated', 'sent_date']
+    search_fields = ['subject', 'recipient_email', 'recipient_name']
+    ordering = ['-sent_date']
+    date_hierarchy = 'sent_date'
+    
+    autocomplete_fields = ['project', 'sender']
+    readonly_fields = ['sent_date', 'read_at']
+
+
+# Custom admin site configuration
+admin.site.site_header = "Extension Management System"
+admin.site.site_title = "EMS Admin"
+admin.site.index_title = "Extension Management Administration"
+
+
+
 
 
