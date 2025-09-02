@@ -21,7 +21,8 @@ from .models import (
     Trainer, ProjectTrainer, DocumentaryRequirement, File,
     AccomplishmentReport, AttendanceTemplate, AttendanceRecord,
     Evaluation, EvaluationLink, ProjectPerformance, Communication,
-    ProjectStatusChoices, UserTypeChoices, RequirementStatusChoices
+    ProjectStatusChoices, UserTypeChoices, RequirementStatusChoices,
+    ReportStatusChoices,
 )
 
 from .serializers import (
@@ -547,8 +548,448 @@ class ProjectViewSet(BaseModelViewSet):
         """ 
         Export projects to various formats.
         """
+        queryset = self.get_queryset()
+        serializer = ProjectExportSerializer(queryset, many=True, context={'request': request})
+        return Response(serializer.data)
 
+    @action(detail=True, methods=['post'])
+    def change_status(self, request, pk=None):
+        """ 
+        Change project status with validation
+        """
+        project = self.get_object()
+        new_status = request.data.get('status')
+        reason = request.data.get('reason', '')
+
+        if not new_status:
+            return Response({'error': 'Status is required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
         
+        if new_status not in dict(ProjectStatusChoices.choices):
+            return Response({'error': 'Invalid status.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        
+        # Validate status transition (add business logic as neeeded)
+        old_status = project.status
+        project.status = new_status
+        project.save()
+
+        # Log status change (implement audit trail as needed)
+
+        return Response({
+            'message': f'Project status changed from {old_status} to {new_status}',
+            'project': ProjectSerializer(project, context={'request': request}).data
+        })
+    
+    @action(detail=False, methods=['post'])
+    def bulk_operations(self, request):
+        """ 
+        Perform bulk operations on multiple projects
+        """
+        serializer = BulkOperationSerializer(data=request.data)
+        if serializer.is_valid():
+            ids = serializer.validated_data['ids']
+            action = serializer.validated_data['action']
+            reason = serializer.validated_data.get('reason', '')
+
+            if len(ids) > MAX_BULK_OPERATIONS:
+                return Response({
+                    'error': f'Cannot perform bulk operations on more than {MAX_BULK_OPERATIONS} items'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            projects = self.get_queryset().filter(project_id__in=ids)
+            updated_count = 0
+
+            with transaction.atomic():
+                if action == 'activate':
+                    updated_count = projects.update(status=ProjectStatusChoices.APPROVED)
+                elif action == 'deactivate':
+                    updated_count = projects.update(status=ProjectStatusChoices.SUSPENDED)
+                elif action == 'delete':
+                    updated_count = projects.count()
+                    projects.delete()
+            
+            return Response({
+                'message': f'Bulk {action} completed on {updated_count} projects',
+                'updated_count': updated_count
+            })
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class ProjectMemberViewSet(BaseModelViewSet):
+    """ 
+    Project team member management.
+    Handles project membership assignments and roles.
+    """
+    queryset = ProjectMember.objects.all()
+    serializer_class = ProjectMemberSerializer
+    filterset_fields = ['project', 'user', 'role', 'is_active']
+    ordering = ['project', 'role', 'assigned_date']
+
+    def get_queryset(self):
+        """ 
+        Optimize with related user and project data
+        """
+        return ProjectMember.objects.select_related(
+            'user', 'project'
+        )
+    
+    @action(detail=False, methods=['post'])
+    def assign_member(self, request):
+        """ 
+        Assign user to project with role validation.
+        """
+        project_id = request.data.get('project_id')
+        user_id = request.data.get('user_id')
+        role = request.data.get('role', 'MEMBER')
+
+        try:
+            project = Project.objects.get(project_id=project_id)
+            user = CustomUser.objects.get(user_id=user_id)
+
+            # Check if membership already exists
+            if ProjectMember.objects.filter(project=project, user=user).exists():
+                return Response({'error': 'User is already a member of this project.'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            member = ProjectMember.objects.create(
+                project=project,
+                user=user,
+                role=role
+            )
+
+            serializer = ProjectMemberSerializer(member, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        
+        except Project.DoesNotExist:
+            return Response({'error': 'Project not found.'},
+                            status=status.HTTP_404_NOT_FOUND)
+        
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found.'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post'])
+    def remove_member(self, request, pk=None):
+        """ 
+        Remove member from project.
+        """
+        member = self.get_object()
+        member.is_active = False
+        member.save()
+
+        return Response({'message': 'Member removed from the project successfully!'})
+
+
+
+# ============================================================================
+# TRAINER MANAGEMENT VIEWS
+# ============================================================================
+
+class TrainerViewSet(BaseModelViewSet):
+    """
+    Trainer management for internal and external trainers.
+    Handles trainer profiles and assignment tracking.
+    """
+    queryset = Trainer.objects.all()
+    serializer_class = TrainerSerializer
+    search_fields = ['trainer_name', 'email', 'expertise']
+    filterset_fields = ['is_internal', 'created_at']
+    ordering = ['trainer_name']
+    
+    def get_queryset(self):
+        """
+        Annotate with assignment count.
+        """
+        return Trainer.objects.annotate(
+            assignment_count=Count('project_assignments')
+        )
+    
+    @action(detail=False, methods=['get'])
+    def available(self, request):
+        """
+        Get trainers available for assignment.
+        """
+        trainers = self.get_queryset().filter(is_internal=True)  # or other availability logic
+        serializer = TrainerSerializer(trainers, many=True, context={'request': request})
+        return Response(serializer.data)
+
+
+class ProjectTrainerViewSet(BaseModelViewSet):
+    """
+    Project trainer assignment management.
+    Handles trainer scheduling and tracking.
+    """
+    queryset = ProjectTrainer.objects.all()
+    serializer_class = ProjectTrainerSerializer
+    filterset_fields = ['project', 'trainer', 'status', 'training_date']
+    ordering = ['-training_date']
+    
+    def get_queryset(self):
+        """
+        Optimize with trainer and project data.
+        """
+        return ProjectTrainer.objects.select_related(
+            'trainer', 'project'
+        )
+
+
+
+# ============================================================================
+# REQUIREMENTS AND FILE MANAGEMENT VIEWS
+# ============================================================================
+
+class DocumentaryRequirementViewSet(BaseModelViewSet):
+    """ 
+    Documentary requirement management with approval workflow.
+    Handles requirement assignments and tracking.
+    """
+    queryset = DocumentaryRequirement.objects.all()
+    serializer_class = DocumentaryRequirementSerializer
+    filterset_fields = ['project', 'status', 'assigned_to', 'due_date']
+    ordering = ['due_date', 'requirement_name']
+
+    def get_queryset(self):
+        """
+        Optimize with related user and project data.
+        """
+        return DocumentaryRequirement.objects.select_related(
+            'project', 'assigned_by', 'assigned_to', 'approved_by'
+        )
+    
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        """ 
+        Submit requirements for approval.
+        """
+        requirement = self.get_object()
+        requirement.status = RequirementStatusChoices.SUBMITTED
+        requirement.submitted_date = timezone.now()
+        requirement.save()
+
+        return Response({'message': 'Requirement submitted for approval'})
+    
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """ 
+        Approve submitted requirement.
+        """
+        requirement = self.get_object()
+        requirement.status = RequirementStatusChoices.APPROVED
+        requirement.approved_by = request.user
+        requirement.approval_date = timezone.now()
+        requirement.save()
+
+        return Response({'message': 'Requirement approved.'})
+    
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """ 
+        Reject submitted requirement with reason
+        """
+        requirement = self.get_object()
+        reason = request.data.get('reason')
+
+        requirement.status = RequirementStatusChoices.REJECTED
+        requirement.rejection_reason = reason
+        requirement.save()
+
+        return Response({'message': 'Requirement rejected'})
+
+
+
+class FileViewSet(BaseModelViewSet):
+    """ 
+    File management with upload handling and approval workflow.
+    Implements secure file upload and management.
+    """
+    queryset = File.objects.all()
+    serializer_class = FileSerializer
+    parser_classes = [MultiPartParser, FormParser]
+    filterset_fields = ['project', 'requirement', 'file_type', 'approval_status']
+    ordering = ['-uploaded_date']
+
+    def get_queryset(self):
+        """ 
+        Optimize with related data.
+        """
+        return File.objects.select_related(
+            'project', 'requirement', 'uploaded_by', 'approved_by'
+        )
+    
+    def create(self, request, *args, **kwargs):
+        """ 
+        Handle file upload with validation
+        """
+        try:
+            uploaded_file = request.FILES.get('file_path')
+            if not uploaded_file:
+                return Response({'error': 'No file provided'},
+                                status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate file
+            validate_file_upload(uploaded_file)
+
+            # set file metadata
+            request.data['file_name'] = uploaded_file.name
+            request.data['file_size'] = uploaded_file.size
+            request.data['uploaded_by'] = request.user.user_id
+
+            # Determine file type based on extension
+            file_extension = uploaded_file.name.split('.')[-1].lower()
+            file_type_map = {
+                'pdf': 'DOCUMENT',
+                'doc': 'DOCUMENT', 'docx': 'DOCUMENT',
+                'xls': 'SPREADSHEET', 'xlsx': 'SPREADSHEET',
+                'ppt': 'PRESENTATION', 'pptx': 'PRESENTATION',
+                'jpg': 'IMAGE', 'jpeg': 'IMAGE', 'png': 'IMAGE', 'gif': 'IMAGE',
+                'mp4': 'VIDEO', 'avi': 'VIDEO', 'mov': 'VIDEO'
+            }
+            request.data['file_type'] = file_type_map.get(file_extension, 'OTHER')
+
+            return super().create(request, *args, **kwargs)
+        
+        except ValueError as e:
+            return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['get'])
+    def download(self, request, pk=None):
+        """ 
+        Download file with permission check.
+        """
+        file_obj = self.get_object()
+
+        # Check permissions (implement as needed)
+        if not file_obj.file_path:
+            return Response({'error': 'File not found'},
+                            status=status.HTTP_404_NOT_FOUND)
+        
+        return FileResponse(
+            file_obj.file_path.open('rb'),
+            as_attachment=True,
+            filename=file_obj.file_name
+        )
+
+
+
+# ============================================================================
+# REPORTING AND MONITORING VIEWS
+# ============================================================================
+        
+
+class AccomplishmentReportViewSet(BaseModelViewSet):
+    """ 
+    Accomplishment report management with review workflow.
+    Handles report, submission, review, and approval processes.
+    """
+    queryset = AccomplishmentReport.objects.all()
+    serializer_class = AccomplishmentReportSerializer
+    filterset_fields = ['project', 'report_type', 'status', 'submitted_by']
+    ordering = ['-submission_date']
+
+    def get_queryset(self):
+        """ 
+        Optimize with related data and apply user filters.
+        """
+        queryset = AccomplishmentReport.objects.select_related(
+            'project', 'submitted_by', 'reviewed_by'
+        )
+        return apply_user_filters(queryset, self.request.user)
+    
+    def perform_create(self, serializer):
+        """ 
+        Set submitter and submission date on creation
+        """
+        serializer.save(submitted_by=self.request.user)
+
+    @action(detail=True, methods=['post'])
+    def submit_for_review(self, request, pk=None):
+        """ 
+        Submit report for review by changing status.
+        """
+        report = self.get_object()
+
+        if report.status != ReportStatusChoices.DRAFT:
+            return Response(
+                {'error': 'Only draft reports can be submitted for review'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        report.status = ReportStatusChoices.SUBMITTED
+        report.save()
+
+        return Response({
+            'message': 'Report submitted for review successfully',
+            'report': AccomplishmentReportSerializer(report, context={'request': request}).data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def approve_report(self, request, pk=None):
+        """ 
+        Approve submitted report.
+        """
+        report = self.get_object()
+        comments = request.data.get('review_comments', '')
+
+        if report.status != ReportStatusChoices.SUBMITTED:
+            return Response(
+                {'error': 'Only submitted reports can be approved'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        report.status = ReportStatusChoices.APPROVED
+        report.reviewed_by = request.user
+        report.review_date = timezone.now()
+        report.review_comments = comments
+        report.save()
+
+        return Response({
+            'message': 'Report approved successfully',
+            'report': AccomplishmentReportSerializer(report, context={'request': request}).data
+        })
+    
+    @action(detail=True, methods=['post'])
+    def request_revision(self, request, pk=None):
+        """ 
+        Request revision on submitted report.
+        """
+        report = self.get_object()
+        comments = request.data.get('review_comments')
+
+        if not comments:
+            return Response(
+                {'error': 'Review comments are required when requesting revision'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        if report.status != ReportStatusChoices.SUBMITTED:
+            return Response(
+                {'error': 'Only submitted reports can be sent for revision'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        report.status = ReportStatusChoices.REVISION_NEEDED
+        report.reviewed_by = request.user
+        report.review_date = timezone.now()
+        report.review_comments = comments
+        report.save()
+
+        return Response({
+            'message': 'Revision requested successfully',
+            'report': AccomplishmentReportSerializer(report, context={'request': request}).data
+        })
+    
+    @action(detail=False, methods=['get'])
+    def pending_reviews(self, request):
+        """ 
+        Get reports pending review for current user.
+        """
+
+
+
+
 
 
 
