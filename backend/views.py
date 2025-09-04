@@ -986,6 +986,133 @@ class AccomplishmentReportViewSet(BaseModelViewSet):
         """ 
         Get reports pending review for current user.
         """
+        if request.user.user_type not in [
+            UserTypeChoices.EXTENSION_COORDINATOR,
+            UserTypeChoices.DEPARTMENT_HEAD,
+            UserTypeChoices.COLLEGE_HEAD,
+            UserTypeChoices.SYSTEM_ADMIN
+        ]:
+            return Response(
+                {'error': 'Insufficient permissions to review reports'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+        
+        pending_reports = self.get_queryset().filter(
+            status=ReportStatusChoices.SUBMITTED
+        )
+
+        page = self.paginate_queryset(pending_reports)
+        if page is not None:
+            serializer = AccomplishmentReportSerializer(
+                page, many=True, context={'request': request}
+            )
+            return self.get_paginated_response(serializer.data)
+        
+        serializer = AccomplishmentReportSerializer(
+            pending_reports, many=True, context={'request': request}
+        )
+        return Response(serializer.data)
+    
+
+class ProjectPerformanceViewSet(BaseModelViewSet):
+    """ 
+    Project performance metrics management.
+    Handles performance tracking and scoring
+    """
+    queryset = ProjectPerformance.objects.all()
+    serializer_class = ProjectPerformanceSerializer
+    filterset_fields = ['project', 'updated_by']
+    ordering = ['-last_updated']
+
+    def get_queryset(self):
+        """ 
+        Optimize with project data and apply user filters.
+        """
+        queryset = ProjectPerformance.objects.select_related(
+            'project', 'updated_by'
+        )
+        return apply_user_filters(queryset, self.request.user)
+    
+    def perform_update(self, serializer):
+        """ 
+        Set updated_by on performance updates
+        """
+        serializer.save(updated_by=self.request.user)
+
+    @action(detail=False, methods=['get'])
+    def dashboard_metrics(self, request):
+        """ 
+        Get aggregated performance metrics for dashboard.
+        """
+        performances = self.get_queryset()
+
+        metrics = {
+            'total_projects': performances.count(),
+            'excellent_performance': performances.filter(
+                impact_score__gte=EXCELLENT_PERFORMANCE_THRESHOLD,
+                sustainability_rating__gte=EXCELLENT_PERFORMANCE_THRESHOLD
+            ).count(),
+            'good_performance': performances.filter(
+                impact_score__gte=GOOD_PERFORMANCE_THRESHOLD,
+                impact_score__lt=EXCELLENT_PERFORMANCE_THRESHOLD
+            ).count(),
+            'average_completion': performances.aggregate(
+                Avg('completion_percentage')
+            )['completion_percentage__avg'] or 0,
+            'average_budget_utilization': performances.aggregate(
+                Avg('budget_utilization')
+            )['budget_utilization__avg'] or 0,
+            'total_beneficiaries': performances.aggregate(
+                Sum('total_beneficiaries')
+            )['total_beneficiaries__sum'] or 0,
+            'average_impact_score': performances.aggregate(
+                Avg('impact_score')
+            )['impact_score__avg'] or 0
+        }
+
+        return Response(metrics)
+
+    @action(detail=True, methods=['post'])
+    def update_metrics(self, request, pk=None):
+        """ 
+        Update specific performance metrics.
+        """
+        performance = self.get_object()
+
+        allowed_fields = [
+            'total_beneficiaries', 'completion_percentage',
+            'budget_utilization', 'impact_score', 'sustainability_rating'
+        ]
+
+        updated_fields = []
+        for field in allowed_fields:
+            if field in request.data:
+                setattr(performance, field, request.data[field])
+                updated_fields.append(field)
+
+        if updated_fields:
+            performance.updated_by = request.user
+            performance.save()
+
+            return Response({
+                'message': f'Updated metrics: {",".join(updated_fields)}',
+                'performance': ProjectPerformanceSerializer(
+                    performance, context={'request': request}
+                ).data
+            })
+        
+        return Response(
+            {'error': 'No valid metrics provided for update'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+
+
+# ============================================================================
+# ATTENDANCE AND EVALUATION VIEWS
+# ============================================================================
+
+
 
 
 
