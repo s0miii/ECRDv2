@@ -26,13 +26,12 @@ __pycache__/
 *.pyd
 *.sqlite3
 db.sqlite3
-migrations/
 
 # Virtual environments
 venv/
 .venv/
 
-# Django media/static (optional if you’re storing locally)
+# Django media/static
 media/
 staticfiles/
 
@@ -40,18 +39,33 @@ staticfiles/
 # Node.js / Next.js
 # ========================
 node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
 .next/
 out/
+build/
 dist/
 
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# Env files (keep your secrets safe!)
-.env
-.env*.local
-
-# Coverage / testing
+# Testing / Coverage
 coverage/
 .nyc_output/
+
+# ========================
+# Environment / Secrets
+# ========================
+.env
+.env*.local
+*.pem
+
+# Deployment
+.vercel
