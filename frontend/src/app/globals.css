@@ -8,6 +8,8 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Sidebar */
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -16,11 +18,15 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
+  
+  /* Chart colors */
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
   --color-chart-2: var(--chart-2);
   --color-chart-1: var(--chart-1);
+  
+  /* Core UI */
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -37,6 +43,8 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  
+  /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -45,78 +53,305 @@
 
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+
+  /* ============================================
+     USTP PRIMARY COLORS
+     Symbolizes: Importance, confidence, power,
+     authority, intelligence, stability, unity
+     ============================================ */
+  
+  /* Primary - USTP Blue (#1a1b5f) */
+  --primary: #1a1b5f;
+  --primary-rgb: 26 27 95;
+  --primary-foreground: #ffffff;
+  
+  /* Primary Accent - Lighter Blue (#0055a4) */
+  --primary-light: #0055a4;
+  --primary-light-rgb: 0 85 164;
+  
+  /* Primary Dark - Deep Navy (#003366) */
+  --primary-dark: #003366;
+  --primary-dark-rgb: 0 51 102;
+
+  /* ============================================
+     USTP ACCENT COLORS
+     Gold (#fcb315) - Symbolizes: Glory, brilliance,
+     hope, happiness, life, spiritualism, optimism
+     ============================================ */
+  
+  --accent: #fcb315;
+  --accent-rgb: 252 179 21;
+  --accent-foreground: #1e1e1e;
+  
+  /* Accent variations */
+  --accent-light: #ffd54f;
+  --accent-dark: #f9a825;
+
+  /* ============================================
+     USTP SECONDARY COLOR PALETTE
+     Complementary colors for design flexibility
+     ============================================ */
+  
+  /* Orange (#ff6418) - Energy & Creativity */
+  --secondary-orange: #ff6418;
+  --secondary-orange-rgb: 255 100 24;
+  
+  /* Amber (#ff9b18) - Warmth & Approachability */
+  --secondary-amber: #ff9b18;
+  --secondary-amber-rgb: 255 155 24;
+  
+  /* Dark Navy (#03262c) - Depth & Sophistication */
+  --secondary-navy: #03262c;
+  --secondary-navy-rgb: 3 38 44;
+  
+  /* Azure Blue (#0d4677) - Trust & Professionalism */
+  --secondary-azure: #0d4677;
+  --secondary-azure-rgb: 13 70 119;
+  
+  /* Sky Blue (#329dea) - Innovation & Openness */
+  --secondary-sky: #329dea;
+  --secondary-sky-rgb: 50 157 234;
+
+  /* ============================================
+     GREYSCALE PALETTE
+     Professional neutral tones
+     ============================================ */
+  
+  --greyscale-black: #000000;
+  --greyscale-dark: #212121;
+  --greyscale-medium: #626262;
+  --greyscale-light: #b3b3b3;
+  --greyscale-pale: #e3e3e3;
+
+  /* ============================================
+     UI SEMANTIC COLORS
+     ============================================ */
+  
+  /* Base */
+  --background: #ffffff;
+  --foreground: #1e1e1e;
+
+  /* Secondary (Light Gray) */
+  --secondary: #f5f5f5;
+  --secondary-foreground: #1e1e1e;
+
+  /* Muted */
+  --muted: #f0f0f0;
+  --muted-foreground: #555555;
+
+  /* Destructive */
+  --destructive: #d9534f;
+  --destructive-foreground: #ffffff;
+  
+  /* Success - Derived from USTP palette */
+  --success: #0d4677;
+  --success-foreground: #ffffff;
+  
+  /* Warning - USTP Gold */
+  --warning: #fcb315;
+  --warning-foreground: #1e1e1e;
+  
+  /* Info - USTP Sky Blue */
+  --info: #329dea;
+  --info-foreground: #ffffff;
+
+  /* Borders & Inputs */
+  --border: #e5e5e5;
+  --input: #e5e5e5;
+  --ring: #1a1b5f;
+
+  /* ============================================
+     CHART COLORS
+     Using USTP brand palette
+     ============================================ */
+  
+  --chart-1: #1a1b5f; /* USTP Blue */
+  --chart-2: #fcb315; /* USTP Gold */
+  --chart-3: #0d4677; /* Azure Blue */
+  --chart-4: #ff9b18; /* Amber */
+  --chart-5: #329dea; /* Sky Blue */
+
+  /* ============================================
+     SIDEBAR COLORS
+     Professional blue sidebar with gold accents
+     ============================================ */
+  
+  --sidebar: #1a1b5f;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #fcb315;
+  --sidebar-primary-foreground: #1e1e1e;
+  --sidebar-accent: #0055a4;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #2a2d7a;
+  --sidebar-ring: #fcb315;
 }
 
+/* ============================================
+   DARK MODE
+   Adjusted for better contrast & readability
+   ============================================ */
+
 .dark {
-  --background: oklch(0.141 0.005 285.823);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.21 0.006 285.885);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.274 0.006 286.033);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  /* Base */
+  --background: #0a0a0a;
+  --foreground: #f5f5f5;
+
+  /* Primary - Brighter in dark mode */
+  --primary: #0055a4;
+  --primary-rgb: 0 85 164;
+  --primary-foreground: #ffffff;
+  
+  --primary-light: #329dea;
+  --primary-dark: #003366;
+
+  /* Accent - Same gold for brand consistency */
+  --accent: #fcb315;
+  --accent-rgb: 252 179 21;
+  --accent-foreground: #0a0a0a;
+
+  /* Secondary colors - adjusted for dark mode */
+  --secondary-orange: #ff7a3d;
+  --secondary-amber: #ffab3d;
+  --secondary-navy: #0d3d47;
+  --secondary-azure: #1a5a8f;
+  --secondary-sky: #4db3ff;
+
+  /* Greyscale - inverted */
+  --greyscale-black: #ffffff;
+  --greyscale-dark: #e3e3e3;
+  --greyscale-medium: #b3b3b3;
+  --greyscale-light: #626262;
+  --greyscale-pale: #2a2a2a;
+
+  /* Secondary UI */
+  --secondary: #1a1a1a;
+  --secondary-foreground: #f5f5f5;
+
+  /* Muted */
+  --muted: #262626;
+  --muted-foreground: #a1a1a1;
+
+  /* Semantic colors */
+  --destructive: #ff6b6b;
+  --destructive-foreground: #ffffff;
+  
+  --success: #1a5a8f;
+  --success-foreground: #ffffff;
+  
+  --warning: #fcb315;
+  --warning-foreground: #0a0a0a;
+  
+  --info: #4db3ff;
+  --info-foreground: #0a0a0a;
+
+  /* Borders & Inputs */
+  --border: #2a2a2a;
+  --input: #2a2a2a;
+  --ring: #0055a4;
+
+  /* Charts - brighter for dark mode */
+  --chart-1: #0055a4;
+  --chart-2: #fcb315;
+  --chart-3: #1a5a8f;
+  --chart-4: #ffab3d;
+  --chart-5: #4db3ff;
+
+  /* Sidebar - Darker blue for dark mode */
+  --sidebar: #003366;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #fcb315;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #0055a4;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #1a4d7a;
+  --sidebar-ring: #fcb315;
 }
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 transition-colors duration-200;
   }
+  
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  
+  /* Smooth scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  /* Selection colors - USTP branded */
+  ::selection {
+    background-color: rgb(var(--accent-rgb) / 0.3);
+    color: var(--foreground);
+  }
+  
+  ::-moz-selection {
+    background-color: rgb(var(--accent-rgb) / 0.3);
+    color: var(--foreground);
+  }
+}
+
+/* ============================================
+   UTILITY CLASSES
+   USTP Brand Colors
+   ============================================ */
+
+@layer utilities {
+  /* Primary colors */
+  .bg-ustp-blue {
+    background-color: var(--primary);
+  }
+  
+  .text-ustp-blue {
+    color: var(--primary);
+  }
+  
+  .border-ustp-blue {
+    border-color: var(--primary);
+  }
+  
+  /* Gold accent */
+  .bg-ustp-gold {
+    background-color: var(--accent);
+  }
+  
+  .text-ustp-gold {
+    color: var(--accent);
+  }
+  
+  .border-ustp-gold {
+    border-color: var(--accent);
+  }
+  
+  /* Secondary colors */
+  .bg-ustp-orange {
+    background-color: var(--secondary-orange);
+  }
+  
+  .bg-ustp-azure {
+    background-color: var(--secondary-azure);
+  }
+  
+  .bg-ustp-sky {
+    background-color: var(--secondary-sky);
+  }
+  
+  /* Gradient utilities */
+  .bg-gradient-ustp {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  }
+  
+  .bg-gradient-ustp-gold {
+    background: linear-gradient(135deg, var(--accent-dark) 0%, var(--accent) 100%);
+  }
+  
+  .bg-gradient-ustp-vibrant {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
   }
 }

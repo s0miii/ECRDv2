@@ -67,5 +67,40 @@ coverage/
 .env*.local
 *.pem
 
+# ========================
+# Frontend (Next.js + Tailwind + ShadCN)
+# ========================
+
+# Tailwind build artifacts
+*.css.map
+postcss.config.js
+
+# ShadCN UI build cache
+/components.json
+
+# Local Next.js analytics / telemetry
+.next/cache/
+.next/static/
+
+# Local fonts (if downloaded manually)
+public/fonts/
+
+# Local images or build assets
+public/assets/
+public/uploads/
+
+# Package manager artifacts
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# VSCode & JetBrains settings (frontend)
+.vscode/
+.idea/
+
+# Misc frontend caches
+.cache/
+
+
 # Deployment
 .vercel
