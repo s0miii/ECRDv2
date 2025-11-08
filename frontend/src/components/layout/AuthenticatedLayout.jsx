@@ -31,7 +31,7 @@ import { MdLogout } from "react-icons/md";
 // Application configuration constants
 const APP_CONFIG = {
   name: "ECRD v2",
-  subtitle: "Education & Community Resource Development",
+  subtitle: "chuchu samteng samteng",
 };
 
 const MAX_CONTENT_WIDTH = "1700px";
@@ -45,8 +45,8 @@ const NAVIGATION_ITEMS = [
     icon: HiMiniChartPie 
   },
   { 
-    name: "Projects", 
-    path: "/projects", 
+    name: "Project Monitoring", 
+    path: "/monitoring", 
     icon: RiSchoolLine 
   },
 ];
