@@ -46,7 +46,7 @@ const NAVIGATION_ITEMS = [
   },
   { 
     name: "Project Monitoring", 
-    path: "/monitoring", 
+    path: "/project-monitoring", 
     icon: RiSchoolLine 
   },
 ];
@@ -87,10 +87,14 @@ const NavigationItem = ({ item, isActive, pathname }) => {
     <SidebarMenuItem key={item.name}>
       <Link href={item.path}>
         <Button
-          variant={isActive ? "default" : "ghost"}
-          className="justify-start w-full"
+          variant="ghost"
+          className={`justify-start w-full text-sm font-medium transition-colors cursor-pointer
+            ${isActive 
+              ? "bg-primary text-accent hover:bg-accent/90" 
+              : "hover:bg-accent hover:text-accent-foreground"
+            }`}
         >
-          <Icon className="mr-2" />
+          <Icon className="mr-2 h-5 w-5" />
           {item.name}
         </Button>
       </Link>
@@ -128,7 +132,7 @@ const UserProfileMenu = ({ user }) => (
   <div className="p-4 mt-auto border-t border-sidebar-border">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="justify-start w-full">
+        <Button variant="ghost" className="justify-start w-full hover:bg-accent hover:text-accent-foreground cursor-pointer">
           <CgProfile className="mr-2" />
           {user?.name || "Admin User"}
         </Button>
@@ -157,13 +161,17 @@ const UserProfileMenu = ({ user }) => (
 const PageHeader = ({ pathname }) => {
   const getCurrentPageTitle = () => {
     const segments = pathname.split("/").filter(Boolean);
-    return segments[0] 
-      ? segments[0].charAt(0).toUpperCase() + segments[0].slice(1)
-      : "Dashboard";
+    if (!segments.length) return "Dashboard";
+
+    return segments[0]
+      .split("-")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
+
   return (
-    <header className="flex items-center w-full gap-4 px-6 border-b border-border h-14 bg-background">
+    <header className="sticky top-0 z-50 flex items-center w-full gap-4 px-6 border-b border-border h-14 bg-background">
       <div className="flex items-center justify-between w-full gap-4 mx-auto" style={{ maxWidth: MAX_CONTENT_WIDTH }}>
         <div className="flex items-center gap-4">
           <SidebarTrigger />

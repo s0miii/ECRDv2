@@ -24,6 +24,12 @@ import {
   DollarSign
 } from 'lucide-react';
 
+import CreateProjectModal from "./_components/CreateProjectModal";
+// import SubmitReportModal from "./_components/SubmitReportModal";
+// import EvaluateProjectModal from "./_components/EvaluateProjectModal";
+// import UploadDocumentModal from "./_components/UploadDocumentModal";
+
+
 // Temporary mock data - replace with API calls later
 const MOCK_KEY_METRICS = {
   totalProjects: 24,
@@ -167,8 +173,9 @@ const ProjectMonitoringDashboard = () => {
 
   const handleQuickAction = (actionId) => {
     setSelectedAction(actionId);
-    console.log(`Action triggered: ${actionId}`);
   };
+
+  const closeModal = () => setSelectedAction(null);
 
   const getStatusBadgeVariant = (status) => {
     const statusMap = {
@@ -290,7 +297,7 @@ const ProjectMonitoringDashboard = () => {
                   <Button
                     key={action.id}
                     onClick={() => handleQuickAction(action.id)}
-                    className={`${action.className} h-auto py-4 flex flex-col items-center gap-2 shadow-md hover:shadow-lg transition-all`}
+                    className={`${action.className} h-auto py-4 flex flex-col items-center gap-2 shadow-md hover:shadow-lg transition-all cursor-pointer`}
                   >
                     <IconComponent className="h-6 w-6" />
                     <span className="font-medium">{action.label}</span>
@@ -300,6 +307,20 @@ const ProjectMonitoringDashboard = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Modals */}
+        {selectedAction === "create_project" && (
+          <CreateProjectModal open={true} onOpenChange={closeModal} />
+        )}
+        {/* {selectedAction === "submit_report" && (
+          <SubmitReportModal open={true} onOpenChange={closeModal} />
+        )}
+        {selectedAction === "evaluate_project" && (
+          <EvaluateProjectModal open={true} onOpenChange={closeModal} />
+        )}
+        {selectedAction === "upload_document" && (
+          <UploadDocumentModal open={true} onOpenChange={closeModal} />
+        )} */}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Budget Tracking Chart with USTP Colors */}
@@ -424,6 +445,9 @@ const ProjectMonitoringDashboard = () => {
         </Card>
       </div>
     </div>
+
+    
+
   );
 };
 
