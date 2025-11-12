@@ -1,6 +1,7 @@
 // "use client";
 
 import type { Metadata } from "next";
+import TopLoader from "@/components/ui/TopLoader";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import AuthenticatedLayout from "@/components/layout/AuthenticatedLayout";
@@ -30,6 +31,7 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        <TopLoader />
         {children}
       </body>
     </html>

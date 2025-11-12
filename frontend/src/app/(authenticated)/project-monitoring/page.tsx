@@ -25,9 +25,9 @@ import {
 } from 'lucide-react';
 
 import CreateProjectModal from "./_components/CreateProjectModal";
-// import SubmitReportModal from "./_components/SubmitReportModal";
-// import EvaluateProjectModal from "./_components/EvaluateProjectModal";
-// import UploadDocumentModal from "./_components/UploadDocumentModal";
+import SubmitReportModal from "./_components/SubmitReportModal";
+import ProjectEvaluationModal from "./_components/ProjectEvaluationModal";
+import UploadDocumentModal from "./_components/UploadDocumentModal";
 
 
 // Temporary mock data - replace with API calls later
@@ -156,8 +156,8 @@ const ProjectMonitoringDashboard = () => {
       description: 'Submit project progress report'
     },
     {
-      id: 'evaluate_project',
-      label: 'Evaluate Project',
+      id: 'project_evaluation',
+      label: 'Project Evaluation',
       icon: ClipboardCheck,
       className: 'bg-[var(--secondary-sky)] hover:bg-[var(--secondary-sky)]/90 text-white',
       description: 'Conduct project evaluation'
@@ -312,15 +312,15 @@ const ProjectMonitoringDashboard = () => {
         {selectedAction === "create_project" && (
           <CreateProjectModal open={true} onOpenChange={closeModal} />
         )}
-        {/* {selectedAction === "submit_report" && (
+        {selectedAction === "submit_report" && (
           <SubmitReportModal open={true} onOpenChange={closeModal} />
         )}
-        {selectedAction === "evaluate_project" && (
-          <EvaluateProjectModal open={true} onOpenChange={closeModal} />
+        {selectedAction === "project_evaluation" && (
+          <ProjectEvaluationModal open={true} onOpenChange={closeModal} />
         )}
         {selectedAction === "upload_document" && (
           <UploadDocumentModal open={true} onOpenChange={closeModal} />
-        )} */}
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Budget Tracking Chart with USTP Colors */}

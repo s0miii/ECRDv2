@@ -214,10 +214,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               value={formData.leaderId}
               onValueChange={(value) => handleInputChange('leaderId', value)}
             >
-              <SelectTrigger className={errors.leaderId ? 'border-destructive' : ''}>
+              <SelectTrigger className={`w-full ${errors.leaderId ? 'border-destructive' : ''}`}>
                 <SelectValue placeholder="Select project leader" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='bg-white'>
                 {TEMP_LEADERS.map(leader => (
                   <SelectItem key={leader.id} value={leader.id}>
                     {leader.name}
@@ -240,10 +240,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               value={formData.collegeId}
               onValueChange={(value) => handleInputChange('collegeId', value)}
             >
-              <SelectTrigger className={errors.collegeId ? 'border-destructive' : ''}>
+              <SelectTrigger className={`w-full ${errors.collegeId ? 'border-destructive' : ''}`}>
                 <SelectValue placeholder="Select college/campus" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='bg-white'>
                 {TEMP_COLLEGES.map(college => (
                   <SelectItem key={college.id} value={college.id}>
                     {college.name}
@@ -284,10 +284,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({
               value={formData.partnerAgencyId}
               onValueChange={(value) => handleInputChange('partnerAgencyId', value)}
             >
-              <SelectTrigger className={errors.partnerAgencyId ? 'border-destructive' : ''}>
+              <SelectTrigger className={`w-full ${errors.partnerAgencyId ? 'border-destructive' : ''}`}>
                 <SelectValue placeholder="Select partner agency" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className='bg-white'>
                 {TEMP_PARTNER_AGENCIES.map(agency => (
                   <SelectItem key={agency.id} value={agency.id}>
                     {agency.name}
